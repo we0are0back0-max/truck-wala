@@ -303,5 +303,74 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 
+
+<style id="truck-custom-style">
+  /* Exact compact height targeted to seekbar bottom */
+  .player-card, .music-card, [class*="player"], .card {
+    background: rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    padding: 8px 12px !important;
+    max-width: 330px !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Compact Album Art */
+  .player-card img, [class*="player"] img {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Reduce inner spacing */
+  .player-card *, [class*="player"] * {
+    margin-top: 1px !important;
+    margin-bottom: 1px !important;
+  }
+</style>
+
+<script id="truck-custom-script">
+window.addEventListener("load", function() {
+    let mode = 0; // 0: Shuffle, 1: Repeat One, 2: Sequential
+    const modeIcons = ["🔀", "🔂", "🔁"];
+
+    // Find control buttons
+    const allBtns = Array.from(document.querySelectorAll("button, svg, i, a"));
+    
+    // Find Shuffle & Repeat buttons
+    let shuffleBtn = allBtns.find(b => b.innerText.includes("🔀") || b.outerHTML.includes("shuffle"));
+    let repeatBtn = allBtns.find(b => b.innerText.includes("🔁") || b.outerHTML.includes("repeat"));
+
+    // Replace Repeat Icon with Playlist Trigger
+    if (repeatBtn) {
+        repeatBtn.innerHTML = "📋";
+        repeatBtn.title = "Open Playlist";
+        repeatBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            let playlistModal = document.querySelector(".playlist, #playlist, [class*=playlist]");
+            if (playlistModal) {
+                playlistModal.style.display = (playlistModal.style.display === "none" || !playlistModal.style.display) ? "block" : "none";
+            } else {
+                alert("Playlist loading...");
+            }
+        };
+    }
+
+    // Toggle Mode Logic on Shuffle Click
+    if (shuffleBtn) {
+        shuffleBtn.onclick = function(e) {
+            e.preventDefault();
+            mode = (mode + 1) % 3;
+            this.innerHTML = modeIcons[mode];
+            console.log("Current Mode:", modeIcons[mode]);
+        };
+    }
+});
+</script>
+
 </body>
 </html>
