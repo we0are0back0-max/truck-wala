@@ -114,3 +114,33 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🚀 Server active on Port ${PORT}`);
 });
+
+
+// Playlist API Route Added
+const fs = require("fs");
+const path = require("path");
+
+app.get("/api/playlist", (req, res) => {
+  try {
+    // Check if songs JSON or uploads directory exists
+    const uploadsFolder = path.join(__dirname, "public", "uploads");
+    if (!fs.existsSync(uploadsFolder)){
+      fs.mkdirSync(uploadsFolder, { recursive: true });
+    }
+    
+    // Read files from directory or database mock
+    fs.readdir(uploadsFolder, (err, files) => {
+      if (err) {
+        return res.json([]);
+      }
+      const songs = files.filter(file => file.endsWith(".mp3") || file.endsWith(".wav") || file.endsWith(".m4a"))
+                         .map(file => ({
+                            title: file,
+                            url: "/uploads/" + file
+                         }));
+      res.json(songs);
+    });
+  } catch(e) {
+    res.json([]);
+  }
+});
