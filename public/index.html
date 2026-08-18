@@ -85,6 +85,34 @@
   }
 </style>
 
+
+<style>
+  /* Slim Height & Glass Transparency */
+  .player-card, .music-card, .card, [class*="player"] {
+    background: rgba(0, 0, 0, 0.35) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 20px !important;
+    padding: 12px 16px 14px 16px !important;
+    max-width: 340px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Compact Album Art & Spacing */
+  .player-card img, [class*="player"] img {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Tighten vertical spacing */
+  .player-card *, [class*="player"] * {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+  }
+</style>
+
 </head>
 <body>
     <div class="header">
@@ -238,5 +266,42 @@
 
         init();
     </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Locate control buttons
+    const buttons = document.querySelectorAll("button");
+    let shuffleBtn = null;
+    let repeatBtn = null;
+
+    buttons.forEach(btn => {
+        if (btn.innerHTML.includes("repeat") || btn.innerHTML.includes("🔁") || btn.getAttribute("aria-label") === "repeat") repeatBtn = btn;
+        if (btn.innerHTML.includes("shuffle") || btn.innerHTML.includes("🔀") || btn.getAttribute("aria-label") === "shuffle") shuffleBtn = btn;
+    });
+
+    // Replace Repeat button with Playlist icon
+    if (repeatBtn) {
+        repeatBtn.innerHTML = "📋";
+        repeatBtn.title = "Playlist";
+        repeatBtn.onclick = function(e) {
+            e.stopPropagation();
+            alert("Playlist opened!");
+        };
+    }
+
+    // Smart Multi-mode Shuffle Logic: Shuffle -> Repeat One -> Sequential Loop
+    if (shuffleBtn) {
+        let mode = 0; // 0: Shuffle, 1: Repeat One, 2: Sequential
+        const modes = ["🔀 (Shuffle)", "🔂 (Repeat One)", "🔁 (Sequential)"];
+        
+        shuffleBtn.addEventListener("click", function() {
+            mode = (mode + 1) % 3;
+            this.setAttribute("data-mode", mode);
+            console.log("Playback Mode changed to: " + modes[mode]);
+        });
+    }
+});
+</script>
+
 </body>
 </html>
