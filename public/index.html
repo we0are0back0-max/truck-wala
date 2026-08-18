@@ -40,6 +40,19 @@
         .btn-play { background: #ff3d00; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
         .btn-nav { color: white; font-size: 20px; }
     </style>
+
+<style>
+  /* Slim & Transparent B&W Glassmorphism Override */
+  .player-card, .music-card, .card, [class*="player"], [class*="card"] {
+    background: rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    padding: 10px 14px !important;
+  }
+</style>
+
 </head>
 <body>
     <div class="header">
