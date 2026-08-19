@@ -1,146 +1,68 @@
-require('dotenv').config();
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
 const fs = require('fs');
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const streamifier = require('streamifier');
-
+const path = require('path');
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const PORT = process.env.PORT || 3000;
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
+// Middleware
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-const CONFIG_FILE = './config.json';
-const SONGS_FILE = './songs.json';
+// Path to songs JSON database
+const songsFilePath = path.join(__dirname, 'songs.json');
 
-let defaultConfig = {
-    bannerTitle: "ट्रक वाला",
-    bgImage: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=1000"
-};
-
-let defaultSongs = [];
-
-if (!fs.existsSync(CONFIG_FILE)) fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2));
-if (!fs.existsSync(SONGS_FILE)) fs.writeFileSync(SONGS_FILE, JSON.stringify(defaultSongs, null, 2));
-
-const upload = multer({ storage: multer.memoryStorage() });
-
-const uploadToCloudinary = (fileBuffer, folder = 'truck_wala') => {
-    return new Promise((resolve, reject) => {
-        const cldStream = cloudinary.uploader.upload_stream(
-            { folder: folder, resource_type: "auto" },
-            (error, result) => {
-                if (result) resolve(result.secure_url);
-                else reject(error);
-            }
-        );
-        streamifier.createReadStream(fileBuffer).pipe(cldStream);
-    });
-};
-
-app.get('/api/config', (req, res) => res.json(JSON.parse(fs.readFileSync(CONFIG_FILE))));
-
-app.post('/api/config', upload.single('bgFile'), async (req, res) => {
-    try {
-        let config = JSON.parse(fs.readFileSync(CONFIG_FILE));
-        if (req.body.bannerTitle) config.bannerTitle = req.body.bannerTitle;
-        if (req.file) config.bgImage = await uploadToCloudinary(req.file.buffer, 'truck_wala/backgrounds');
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
-        io.emit('configUpdated', config);
-        res.json({ success: true, config });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+// Helper function to read songs
+function getSongs() {
+    if (!fs.existsSync(songsFilePath)) {
+        return [];
     }
+    try {
+        const data = fs.readFileSync(songsFilePath, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        return [];
+    }
+}
+
+// Helper function to save songs
+function saveSongs(songs) {
+    fs.writeFileSync(songsFilePath, JSON.stringify(songs, null, 2));
+}
+
+// API: Get all songs
+app.get('/api/songs', (req, res) => {
+    const songs = getSongs();
+    res.json(songs);
 });
 
-app.get('/api/songs', (req, res) => res.json(JSON.parse(fs.readFileSync(SONGS_FILE))));
-
-app.post('/api/songs', upload.fields([{ name: 'audioFile', maxCount: 1 }, { name: 'coverFile', maxCount: 1 }]), async (req, res) => {
+// API: Add a new song via Direct URLs
+app.post('/api/add-song', (req, res) => {
     try {
-        let songs = JSON.parse(fs.readFileSync(SONGS_FILE));
-        let audioUrl = '';
-        let coverArtUrl = 'https://i.postimg.cc/442v42s0/bobby.jpg';
+        const { title, artist, url, image } = req.body;
 
-        if (req.files && req.files['audioFile']) audioUrl = await uploadToCloudinary(req.files['audioFile'][0].buffer, 'truck_wala/audio');
-        if (req.files && req.files['coverFile']) coverArtUrl = await uploadToCloudinary(req.files['coverFile'][0].buffer, 'truck_wala/covers');
+        if (!title || !artist || !url || !image) {
+            return res.status(400).json({ success: false, message: 'Sabhi fields bharna zaroori hai!' });
+        }
 
-        let fallbackName = req.files && req.files['audioFile'] ? req.files['audioFile'][0].originalname.replace(/\.[^/.]+$/, "") : "New Song";
-
+        const songs = getSongs();
         const newSong = {
-            id: Date.now().toString(),
-            title: req.body.title || fallbackName,
-            artist: req.body.artist || 'Truck Wala Mix',
-            url: audioUrl,
-            coverArt: coverArtUrl
+            id: Date.now(),
+            title,
+            artist,
+            url,
+            image
         };
 
         songs.push(newSong);
-        fs.writeFileSync(SONGS_FILE, JSON.stringify(songs, null, 2));
-        io.emit('songsUpdated', songs);
-        res.json({ success: true, song: newSong });
+        saveSongs(songs);
+
+        res.json({ success: true, message: 'Gaana safaltapoorvak add ho gaya!' });
     } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, message: 'Server error: ' + err.message });
     }
 });
 
-app.delete('/api/songs/:id', (req, res) => {
-    let songs = JSON.parse(fs.readFileSync(SONGS_FILE)).filter(s => s.id !== req.params.id);
-    fs.writeFileSync(SONGS_FILE, JSON.stringify(songs, null, 2));
-    io.emit('songsUpdated', songs);
-    res.json({ success: true });
-});
-
-let activeUsers = 0;
-io.on('connection', (socket) => {
-    activeUsers++;
-    io.emit('userCount', activeUsers);
-    socket.on('disconnect', () => {
-        activeUsers = Math.max(0, activeUsers - 1);
-        io.emit('userCount', activeUsers);
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`🚀 Server active on Port ${PORT}`);
-});
-
-
-// Playlist API Route Added
-const fs = require("fs");
-const path = require("path");
-
-app.get("/api/playlist", (req, res) => {
-  try {
-    // Check if songs JSON or uploads directory exists
-    const uploadsFolder = path.join(__dirname, "public", "uploads");
-    if (!fs.existsSync(uploadsFolder)){
-      fs.mkdirSync(uploadsFolder, { recursive: true });
-    }
-    
-    // Read files from directory or database mock
-    fs.readdir(uploadsFolder, (err, files) => {
-      if (err) {
-        return res.json([]);
-      }
-      const songs = files.filter(file => file.endsWith(".mp3") || file.endsWith(".wav") || file.endsWith(".m4a"))
-                         .map(file => ({
-                            title: file,
-                            url: "/uploads/" + file
-                         }));
-      res.json(songs);
-    });
-  } catch(e) {
-    res.json([]);
-  }
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
