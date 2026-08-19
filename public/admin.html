@@ -3,203 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Truck Wala - Admin Panel</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Truck-Wala Admin Panel</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background: #121212; color: #fff; padding: 15px; max-width: 600px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-        .badge { background: #00e676; color: #000; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-        .card { background: #1e1e1e; border-radius: 12px; padding: 18px; margin-bottom: 20px; border: 1px solid #333; }
-        .card h2 { font-size: 17px; margin-bottom: 12px; color: #ff5252; display: flex; align-items: center; gap: 8px; }
-        label { font-size: 13px; color: #bbb; margin-top: 12px; display: block; font-weight: 600; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 12px; margin-top: 6px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 8px; font-size: 14px; }
-        input[type="file"] { background: #252525; border: 1px dashed #666; cursor: pointer; }
-        button { width: 100%; background: #ff3d00; color: white; border: none; padding: 13px; margin-top: 18px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
-        .bg-preview-box { text-align: center; margin: 10px 0; background: #111; padding: 10px; border-radius: 8px; border: 1px solid #333; }
-        .bg-preview-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 6px; }
-        .extracted-status { font-size: 12px; color: #00e676; margin-top: 8px; display: none; }
-        .song-item { display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .song-item img { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; }
-        .song-details { flex: 1; margin-left: 12px; }
-        .song-details h4 { font-size: 14px; color: #fff; }
-        .song-details p { font-size: 12px; color: #aaa; }
-        .del-btn { background: #d50000; width: auto; padding: 8px 14px; font-size: 12px; margin-top: 0; }
-        .cover-preview { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-top: 8px; display: none; }
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 20px; margin: 0; }
+        .container { max-width: 500px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h2 { color: #ff4757; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #ccc; }
+        input[type="text"] { width: 100%; padding: 10px; background: #2d2d2d; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; background: #ff4757; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #ff6b81; }
     </style>
-
-    <style>
-      /* Mobile Fluid Responsive Fix */
-      * { box-sizing: border-box; }
-      body { width: 100vw; overflow-x: hidden; margin: 0; padding: 0; }
-      .container, .player-card, .glass-panel { max-width: 95vw !important; width: 100% !important; margin: 0 auto !important; }
-    </style>
-    
 </head>
 <body>
-    <div class="header">
-        <div>
-            <h2><i class="fa-solid fa-sliders"></i> Admin Panel</h2>
-            <p style="font-size: 12px; color: #aaa;">Truck Wala Control Panel</p>
-        </div>
-        <div class="badge"><i class="fa-solid fa-users"></i> Live: <span id="live-count">0</span></div>
-    </div>
-    <div class="card">
-        <h2><i class="fa-solid fa-image"></i> Edit App Banner & Background</h2>
-        <div class="bg-preview-box">
-            <p style="font-size:12px; color:#aaa; margin-bottom:6px;">Current Background Preview:</p>
-            <img id="bgPreview" class="bg-preview-img" src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=1000" alt="Background">
-        </div>
-        <form id="configForm">
-            <label>Banner Title (Hindi):</label>
-            <input type="text" id="bannerTitle" placeholder="e.g. ट्रक वाला">
-            <label>Choose Background Image From Gallery:</label>
-            <input type="file" id="bgFile" accept="image/*">
-            <button type="submit"><i class="fa-solid fa-floppy-disk"></i> Save App Changes</button>
-        </form>
-    </div>
-    <div class="card">
-        <h2><i class="fa-solid fa-music"></i> Add Audio Song</h2>
+    <div class="container">
+        <h2>🎵 Add Permanent Song</h2>
         <form id="songForm">
-            <label>Select MP3 Audio File:</label>
-            <input type="file" id="audioFile" accept="audio/*" required>
-            <div id="extractStatus" class="extracted-status"><i class="fa-solid fa-circle-check"></i> Song details auto-extracted!</div>
-            <label>Song Title:</label>
-            <input type="text" id="songTitle" placeholder="Auto-detected from file">
-            <label>Singer / Artist Name:</label>
-            <input type="text" id="songArtist" placeholder="Auto-detected from file">
-            <label>Cover Photo:</label>
-            <input type="file" id="coverFile" accept="image/*">
-            <img id="coverPreview" class="cover-preview" alt="Cover Preview">
-            <button type="submit"><i class="fa-solid fa-plus"></i> Upload Song To Cloudinary</button>
+            <div class="form-group">
+                <label>Song Title:</label>
+                <input type="text" id="title" placeholder="Gaane ka naam likhein" required>
+            </div>
+            <div class="form-group">
+                <label>Singer / Artist:</label>
+                <input type="text" id="artist" placeholder="Singer ka naam" required>
+            </div>
+            <div class="form-group">
+                <label>Audio URL (Archive.org .mp3 Link):</label>
+                <input type="text" id="audioUrl" placeholder="https://archive.org/download/..." required>
+            </div>
+            <div class="form-group">
+                <label>Cover Photo URL (ImgBB Link):</label>
+                <input type="text" id="imageUrl" placeholder="https://i.ibb.co/..." required>
+            </div>
+            <button type="submit">Save Song to Playlist</button>
         </form>
-    </div>
-    <div class="card">
-        <h2><i class="fa-solid fa-list"></i> Current Playlist (<span id="song-count">0</span>)</h2>
-        <div id="songsList">Loading playlist...</div>
     </div>
     <script>
-        const socket = io();
-        socket.on('userCount', count => document.getElementById('live-count').innerText = count);
-        socket.on('configUpdated', cfg => {
-            if(cfg.bgImage) document.getElementById('bgPreview').src = cfg.bgImage + '?t=' + Date.now();
-        });
-
-        document.getElementById('audioFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            let fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
-            document.getElementById('songTitle').value = fileNameWithoutExt;
-            document.getElementById('songArtist').value = "Truck Wala Mix";
-            window.jsmediatags.read(file, {
-                onSuccess: function(tag) {
-                    const tags = tag.tags;
-                    if (tags.title) document.getElementById('songTitle').value = tags.title;
-                    if (tags.artist) document.getElementById('songArtist').value = tags.artist;
-                    if (tags.picture) {
-                        const { data, format } = tags.picture;
-                        let base64String = "";
-                        for (let i = 0; i < data.length; i++) base64String += String.fromCharCode(data[i]);
-                        const base64 = `data:${format};base64,${window.btoa(base64String)}`;
-                        document.getElementById('coverPreview').src = base64;
-                        document.getElementById('coverPreview').style.display = 'block';
-                        fetch(base64).then(res => res.blob()).then(blob => {
-                            const fileObj = new File([blob], "extracted_cover.jpg", { type: format });
-                            const container = new DataTransfer();
-                            container.items.add(fileObj);
-                            document.getElementById('coverFile').files = container.files;
-                        });
-                    }
-                    document.getElementById('extractStatus').style.display = 'block';
-                },
-                onError: function() {
-                    document.getElementById('extractStatus').style.display = 'block';
-                    document.getElementById('extractStatus').innerText = "⚡ Filename auto-filled!";
-                }
-            });
-        });
-
-        async function loadData() {
-            const cfg = await (await fetch('/api/config')).json();
-            document.getElementById('bannerTitle').value = cfg.bannerTitle || '';
-            if(cfg.bgImage) document.getElementById('bgPreview').src = cfg.bgImage;
-            loadSongs();
-        }
-
-        async function loadSongs() {
-            const songs = await (await fetch('/api/songs')).json();
-            document.getElementById('song-count').innerText = songs.length;
-            const container = document.getElementById('songsList');
-            container.innerHTML = '';
-            if(songs.length === 0) {
-                container.innerHTML = '<p style="color:#888; font-size:13px; text-align:center;">No songs added yet.</p>';
-                return;
-            }
-            songs.forEach(s => {
-                const item = document.createElement('div');
-                item.className = 'song-item';
-                item.innerHTML = `
-                    <img src="${s.coverArt}">
-                    <div class="song-details">
-                        <h4>${s.title}</h4>
-                        <p>${s.artist}</p>
-                    </div>
-                    <button class="del-btn" onclick="deleteSong('${s.id}')"><i class="fa-solid fa-trash"></i> Delete</button>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        document.getElementById('configForm').onsubmit = async (e) => {
+        document.getElementById('songForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button');
-            btn.innerText = "Updating Cloudinary...";
-            btn.disabled = true;
-            const formData = new FormData();
-            formData.append('bannerTitle', document.getElementById('bannerTitle').value);
-            const bgFileInput = document.getElementById('bgFile');
-            if (bgFileInput.files[0]) formData.append('bgFile', bgFileInput.files[0]);
-            const res = await fetch('/api/config', { method: 'POST', body: formData });
-            const data = await res.json();
-            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save App Changes';
-            btn.disabled = false;
-            if(data.success) alert('App Updated Successfully!');
-        };
+            const title = document.getElementById('title').value;
+            const artist = document.getElementById('artist').value;
+            const url = document.getElementById('audioUrl').value;
+            const image = document.getElementById('imageUrl').value;
 
-        document.getElementById('songForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            btn.innerText = "Uploading to Cloudinary...";
-            btn.disabled = true;
-            const formData = new FormData();
-            formData.append('title', document.getElementById('songTitle').value);
-            formData.append('artist', document.getElementById('songArtist').value);
-            const audioFileInput = document.getElementById('audioFile');
-            const coverFileInput = document.getElementById('coverFile');
-            if (audioFileInput.files[0]) formData.append('audioFile', audioFileInput.files[0]);
-            if (coverFileInput.files[0]) formData.append('coverFile', coverFileInput.files[0]);
-            const res = await fetch('/api/songs', { method: 'POST', body: formData });
+            const res = await fetch('/api/add-song', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, artist, url, image })
+            });
             const data = await res.json();
-            btn.innerHTML = '<i class="fa-solid fa-plus"></i> Upload Song To Cloudinary';
-            btn.disabled = false;
             if(data.success) {
-                alert('Song Uploaded Successfully!');
+                alert('Gaana successfully add ho gaya!');
                 document.getElementById('songForm').reset();
-                document.getElementById('coverPreview').style.display = 'none';
-                document.getElementById('extractStatus').style.display = 'none';
-                loadSongs();
+            } else {
+                alert('Error: ' + data.message);
             }
-        };
-
-        async function deleteSong(id) {
-            if (confirm('Delete this song?')) {
-                await fetch('/api/songs/' + id, { method: 'DELETE' });
-                loadSongs();
-            }
-        }
-        loadData();
+        });
     </script>
 </body>
 </html>
